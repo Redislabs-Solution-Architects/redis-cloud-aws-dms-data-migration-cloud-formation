@@ -1,0 +1,313 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Region:
+    Type: String
+    Description: AWS region
+    Default: "us-west-2"
+  AWSCreds:
+    Type: CommaDelimitedList
+    Description: Access key and Secret key for AWS [Access Keys, Secret Key]
+  Owner:
+    Type: String
+    Description: Owner tag name
+  VPCCidr:
+    Type: String
+    Description: VPC CIDR block
+    Default: "10.0.0.0/16"
+  Subnet1Cidr:
+    Type: String
+    Description: CIDR block for Subnet 1
+    Default: "10.0.1.0/24"
+  Subnet2Cidr:
+    Type: String
+    Description: CIDR block for Subnet 2
+    Default: "10.0.2.0/24"
+  Subnet1AZ:
+    Type: String
+    Description: Availability Zone for Subnet 1
+    Default: "us-west-2a"
+  Subnet2AZ:
+    Type: String
+    Description: Availability Zone for Subnet 2
+    Default: "us-west-2b"
+  UbuntuAMI:
+    Type: AWS::EC2::Image::Id
+    Description: Ubuntu 18.04 AMI ID
+    Default: "ami-0a588942e90cfecc9"
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: EC2 Key Pair Name
+    ConstraintDescription: Must be a valid EC2 key pair name.
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: "dms-vpc"
+        - Key: Owner
+          Value: !Ref Owner
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: "dms-igw"
+        - Key: Owner
+          Value: !Ref Owner
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  Subnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref Subnet1Cidr
+      AvailabilityZone: !Ref Subnet1AZ
+      Tags:
+        - Key: Name
+          Value: "dms-subnet1"
+        - Key: Owner
+          Value: !Ref Owner
+
+  Subnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref Subnet2Cidr
+      AvailabilityZone: !Ref Subnet2AZ
+      Tags:
+        - Key: Name
+          Value: "dms-subnet2"
+        - Key: Owner
+          Value: !Ref Owner
+
+  MainRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: "dms-rt"
+        - Key: Owner
+          Value: !Ref Owner
+
+  InternetRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref MainRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref InternetGateway
+
+  Subnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet1
+      RouteTableId: !Ref MainRouteTable
+
+  Subnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet2
+      RouteTableId: !Ref MainRouteTable
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.large
+      ImageId: !Ref UbuntuAMI
+      KeyName: !Ref KeyName
+
+      SourceDestCheck: false
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 40
+            VolumeType: gp2
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      SubnetId: !Ref Subnet1
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+
+          sudo apt update -y
+          sudo apt-get install expect -y
+          sudo apt install docker.io -y
+          sudo apt install wget -y
+          sudo apt install unzip -y
+          sudo service docker start
+          sudo chmod 666 /var/run/docker.sock
+          docker images
+          docker run --name aws-dms-demo-mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=Redis00$ -d mysql:latest
+          docker ps
+
+          echo "Now we will enter docker and create the tpcds db"
+          sleep 20  # Add a delay of 10 seconds
+
+          ###run the expect command
+          expect -c '
+            spawn docker exec -it aws-dms-demo-mysql mysql -uroot -p
+            expect "Enter password:"
+            send "Redis00$\r"
+            expect "mysql>"
+            send "create database tpcds;\r"
+            expect "mysql>"
+            send "show databases;\r"
+            expect "mysql>"
+            send "exit\r"
+            expect eof
+          '
+
+          echo "The db is created, now get the awsdevday data"
+          sleep 10  # Add a delay of 10 seconds
+
+          wget https://aws-devday-resources.s3.us-west-2.amazonaws.com/awsdevday-dms-demo-data.zip
+          unzip awsdevday-dms-demo-data.zip
+          echo "You have unzipped the data"
+          sleep 10  # Add a delay of 10 seconds
+          cd /
+          ls
+          echo "Send the files to docker tmp folder"
+          sudo docker cp tmp aws-dms-demo-mysql:/
+          sleep 10  # Add a delay of 10 seconds
+          echo "Add tables to the DB from tmp folder"
+
+          expect -c '
+            spawn docker exec -it aws-dms-demo-mysql bash
+            expect "# "
+            send "cd tmp\r"
+            expect "# "
+            send "ls\r"
+            expect "# "
+            send "mysql -uroot -pRedis00$ tpcds < tpcds.sql\r"
+            expect "# "
+            send "mysql -uroot -pRedis00$\r"
+            expect "mysql>"
+            send "show databases;\r"
+            expect "mysql>"
+            send "use tpcds;\r"
+            expect "mysql>"
+            send "show tables;\r"
+            expect "mysql>"
+            send "exit\r"
+            send "exit\r"
+            expect eof
+          '
+
+          echo "Now run the final step, fill the dbs"
+          sleep 10  # Add a delay of 10 seconds
+
+          expect -c '
+            spawn docker exec -it aws-dms-demo-mysql bash
+            expect "# "
+            send "cd /tmp\r"
+            expect "# "
+            send "ls\r"
+            expect "# "
+            send "mysql -uroot -pRedis00$ -e \"SET GLOBAL local_infile=1;\"\r"
+            expect "# "
+            send "chmod 777 /tmp\r"
+            send "exit\r"
+            expect eof
+          '
+
+          echo "import dbs"
+          sleep 10  # Add a delay of 10 seconds
+          docker exec aws-dms-demo-mysql bash -c "cd /tmp && mysql -uroot -pRedis00$ --local-infile -Dtpcds -e 'load data local infile \"web_sales.dat\" replace into table web_sales character set latin1 fields terminated by \"|\"'"
+          echo "imported web_sales"
+          sleep 10  # Add a delay of 10 seconds
+
+          echo "Check out count of rows in dbs"
+          sleep 10  # Add a delay of 10 seconds
+
+          expect -c '
+            spawn docker exec -it aws-dms-demo-mysql bash
+            expect "# "
+            send "mysql -uroot -pRedis00$\r"
+            expect "mysql>"
+            send "show databases;\r"
+            expect "mysql>"
+            send "use tpcds;\r"
+            expect "mysql>"
+            send "show tables;\r"
+            expect "mysql>"
+            expect "mysql>"
+            send "select count(*) from web_sales;\r"
+            expect "mysql>"
+            send "exit\r"
+            send "exit\r"
+            expect eof
+          '
+
+          echo "YOU DID IT!"
+      Tags:
+        - Key: Name
+          Value: "dms-ec2"
+        - Key: Owner
+          Value: !Ref Owner
+
+  EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref EC2Instance
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Allow SSH access"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref VPCCidr
+          Description: SSH from VPC
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: !Ref VPCCidr
+          Description: MySQL from VPC
+        - IpProtocol: -1
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: -1
+          FromPort: -1
+          ToPort: -1
+          CidrIp: !Ref VPCCidr
+          Description: MySQL from VPC
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic
+
+Outputs:
+  VPCId:
+    Value: !Ref VPC
+    Export:
+      Name: !Sub "${AWS::StackName}-VPCId"
+
+  Subnet1Id:
+    Value: !Ref Subnet1
+    Export:
+      Name: !Sub "${AWS::StackName}-Subnet1Id"
+
+  Subnet2Id:
+    Value: !Ref Subnet2
+    Export:
+      Name: !Sub "${AWS::StackName}-Subnet2Id"
