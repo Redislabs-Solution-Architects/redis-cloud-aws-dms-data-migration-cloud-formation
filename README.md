@@ -57,10 +57,31 @@ After this configure AWS DMS.
     * Owner: (your owner tag)
     * RedisDBEndpoint: (see below)
     * RedisDBPassword: (see below)
+
 #### Redis Cloud Instuctions:
 1. You will need to create a Redis Cloud Subscription and DB
 2. The DB should have port 12000
 
+Here are the detailed instructions:
+
+![Alt text](image/rediscloud/Picture1.png?raw=true "Title")
+![Alt text](image/rediscloud/Picture2.png?raw=true "Title")
+![Alt text](image/rediscloud/Picture3.png?raw=true "Title")
+![Alt text](image/rediscloud/Picture4.png?raw=true "Title")
+![Alt text](image/rediscloud/Picture5.png?raw=true "Title")
+![Alt text](image/rediscloud/Picture6.png?raw=true "Title")
+![Alt text](image/rediscloud/Picture7.png?raw=true "Title")
+![Alt text](image/rediscloud/Picture8.png?raw=true "Title")
+![Alt text](image/rediscloud/Picture9.png?raw=true "Title")
+![Alt text](image/rediscloud/Picture10.png?raw=true "Title")
+![Alt text](image/rediscloud/Picture11.png?raw=true "Title")
+![Alt text](image/rediscloud/Picture12.png?raw=true "Title")
+![Alt text](image/rediscloud/Picture13.png?raw=true "Title")
+![Alt text](image/rediscloud/Picture14.png?raw=true "Title")
+![Alt text](image/rediscloud/Picture15.png?raw=true "Title")
+![Alt text](image/rediscloud/Picture16.png?raw=true "Title")
+![Alt text](image/rediscloud/Picture17.png?raw=true "Title")
+![Alt text](image/rediscloud/Picture18.png?raw=true "Title")
 
 It can take around 15 minutes to provision everything
 
