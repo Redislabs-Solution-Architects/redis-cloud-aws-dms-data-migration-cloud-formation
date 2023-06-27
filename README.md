@@ -91,6 +91,15 @@ It can take around 15 minutes to provision everything
 ##### Migration Task:
 * follow migration task instructions
 
-Clean Up:
+![Alt text](image/dms-migration/Picture1.png?raw=true "Title")
+![Alt text](image/dms-migration/Picture2.png?raw=true "Title")
+![Alt text](image/dms-migration/Picture3.png?raw=true "Title")
+![Alt text](image/dms-migration/Picture4.png?raw=true "Title")
+![Alt text](image/dms-migration/Picture5.png?raw=true "Title")
+![Alt text](image/dms-migration/Picture6.png?raw=true "Title")
+
+
+
+#### Clean Up:
 * Delete VPC peering connection and route from route table
 * Delete Stack
