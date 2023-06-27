@@ -88,7 +88,7 @@ Here are the detailed instructions:
 
 It can take around 15 minutes to provision everything
 
-##### Migration Task:
+#### DMS Migration Task:
 * follow migration task instructions
 
 ![Alt text](image/dms-migration/Picture1.png?raw=true "Title")
