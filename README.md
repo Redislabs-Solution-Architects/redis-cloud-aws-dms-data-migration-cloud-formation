@@ -69,11 +69,15 @@ Here are the detailed instructions:
 ![Alt text](image/rediscloud/Picture3.png?raw=true "Title")
 ![Alt text](image/rediscloud/Picture4.png?raw=true "Title")
 ![Alt text](image/rediscloud/Picture5.png?raw=true "Title")
+#### **IMPORTANT**
 * After this DB is provisioned you will need to provision one more with a Port 12000.
 * This can only be done after the subscription is created
 * After the Subscription exists, create a new DB with port 12000 and use this for the rest of the instructions
 ![Alt text](image/rediscloud/Picture6.png?raw=true "Title")
 ![Alt text](image/rediscloud/Picture7.png?raw=true "Title")
+#### **CREATE NEW DB HERE**
+* Create a new DB that you will use, follow the instructions above but pick a 12000 Port
+![Alt text](image/rediscloud/PictureNEWDB.png?raw=true "Title")
 ![Alt text](image/rediscloud/Picture8.png?raw=true "Title")
 ![Alt text](image/rediscloud/Picture9.png?raw=true "Title")
 ![Alt text](image/rediscloud/Picture10.png?raw=true "Title")
