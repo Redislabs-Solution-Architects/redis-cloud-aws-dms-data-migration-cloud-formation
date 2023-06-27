@@ -56,6 +56,8 @@ After this configure AWS DMS.
     * KeyName: (Select a EC2 Key Pair you have already created)
     * Owner: (your owner tag)
     * RedisDBEndpoint: (see below) [Get DB values here](#get-new-db-values-here)
+        * MAKE SURE TO REMOVER THE ":12000" off the end of the endpoint for the CF parameter value.
+        * The value should look like something like this: ```redis-12000.internal.c25772.us-west-2-mz.ec2.cloud.rlrcp.com```
     * RedisDBPassword: (see below) [Get DB values here](#get-new-db-values-here)
 
 ### Redis Cloud Instuctions:
