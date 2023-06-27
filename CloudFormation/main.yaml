@@ -5,9 +5,9 @@ Parameters:
     Type: String
     Description: AWS region
     Default: "us-west-2"
-  AWSCreds:
-    Type: CommaDelimitedList
-    Description: Access key and Secret key for AWS [Access Keys, Secret Key]
+  # AWSCreds:
+  #   Type: CommaDelimitedList
+  #   Description: Access key and Secret key for AWS [Access Keys, Secret Key]
   Owner:
     Type: String
     Description: Owner tag name
@@ -39,6 +39,14 @@ Parameters:
     Type: AWS::EC2::KeyPair::KeyName
     Description: EC2 Key Pair Name
     ConstraintDescription: Must be a valid EC2 key pair name.
+  
+  RedisDBPassword:
+    Description: Redis database password
+    Type: String
+
+  RedisDBEndpoint:
+    Description: Redis database endpoint
+    Type: String
 
 Resources:
   VPC:
@@ -296,6 +304,130 @@ Resources:
           CidrIp: 0.0.0.0/0
           Description: Allow all outbound traffic
 
+###################### DMS Replication Instance
+
+  DMSReplicationSubnetGroup:
+    Type: AWS::DMS::ReplicationSubnetGroup
+    Properties:
+      ReplicationSubnetGroupDescription: dms replication subnetgroup
+      ReplicationSubnetGroupIdentifier: dms-replication-subnetgroup
+      SubnetIds:
+        - !Ref Subnet1
+        - !Ref Subnet2
+      Tags:
+        - Key: Name
+          Value: "dms-replication-subnetgroup"
+        - Key: Owner
+          Value: !Ref Owner
+
+  DMSReplicationInstance:
+    Type: AWS::DMS::ReplicationInstance
+    Properties:
+      AllocatedStorage: 50
+      AutoMinorVersionUpgrade: false
+      AvailabilityZone: !Ref Subnet1AZ
+      EngineVersion: "3.4.7"
+      MultiAZ: false
+      PubliclyAccessible: false
+      ReplicationInstanceClass: "dms.t3.large"
+      ReplicationInstanceIdentifier: dms-replication-instance
+      ReplicationSubnetGroupIdentifier: !Ref DMSReplicationSubnetGroup
+      Tags:
+        - Key: Name
+          Value: "dms-replication-instance"
+        - Key: Owner
+          Value: !Ref Owner
+
+  DMSEndpoint:
+    Type: AWS::DMS::Endpoint
+    Properties:
+      EndpointIdentifier: dms-source-endpoint
+      EndpointType: source
+      EngineName: mysql
+      ExtraConnectionAttributes: ""
+      ServerName: !GetAtt EC2Instance.PrivateIp
+      Port: 3306
+      Username: "root"
+      Password: "Redis00$"
+      SslMode: "none"
+      Tags:
+        - Key: Name
+          Value: "dms-source-endpoint"
+        - Key: Owner
+          Value: !Ref Owner
+
+####################### DMS Target Endpoint
+
+  RedisEndpoint:
+    Type: AWS::DMS::Endpoint
+    Properties:
+      EndpointIdentifier: dms-redis-endpoint
+      EndpointType: target
+      EngineName: redis
+      RedisSettings:
+        ServerName: !Ref RedisDBEndpoint
+        Port: 12000
+        SslSecurityProtocol: plaintext
+        AuthType: auth-token
+        AuthPassword: !Ref RedisDBPassword
+      Tags:
+        - Key: Name
+          Value: 'dms-target-endpoint'
+        - Key: Owner
+          Value: !Ref Owner
+
+
+####################### DMS Migration Task
+
+  ReplicationTask:
+    Type: AWS::DMS::ReplicationTask
+    Properties:
+      MigrationType: full-load
+      ReplicationInstanceArn: !Ref DMSReplicationInstance
+      ReplicationTaskIdentifier: dms-redis-migration-task
+      SourceEndpointArn: !Ref DMSEndpoint
+      TargetEndpointArn: !Ref RedisEndpoint
+      TableMappings: |
+        {
+          "rules": [
+            {
+              "rule-type": "selection",
+              "rule-id": "1",
+              "rule-name": "my-selection-rule",
+              "object-locator": {
+                "schema-name": "tpcds",
+                "table-name": "web_sales"
+              },
+              "rule-action": "include"
+            }
+          ]
+        }
+      ReplicationTaskSettings: |
+        {
+          "TargetMetadata": {
+            "TargetTablePrepMode": "drop-tables"
+          },
+          "FullLoadSettings": {
+            "LimitedSizeLobMode": true,
+            "LobChunkSize": 32
+          },
+          "Logging": {
+            "EnableLogging": true,
+            "EnableLogTruncation": true
+          }
+        }
+      Tags:
+        - Key: Name
+          Value: 'dms-migration-task'
+        - Key: Owner
+          Value: !Ref Owner
+
+
+
+
+
+######################
+
 Outputs:
   VPCId:
     Value: !Ref VPC
@@ -311,3 +443,15 @@ Outputs:
     Value: !Ref Subnet2
     Export:
       Name: !Sub "${AWS::StackName}-Subnet2Id"
+
+  DMSReplicationSubnetGroupOutput:
+    Description: The ID of the DMS replication subnet group
+    Value: !Ref DMSReplicationSubnetGroup
+
+  DMSReplicationInstanceOutput:
+    Description: The ID of the DMS replication instance
+    Value: !Ref DMSReplicationInstance
+
+  DMSEndpointOutput:
+    Description: The ID of the DMS endpoint
+    Value: !Ref DMSEndpoint
