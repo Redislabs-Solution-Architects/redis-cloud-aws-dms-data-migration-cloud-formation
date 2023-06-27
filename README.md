@@ -55,8 +55,8 @@ After this configure AWS DMS.
 7. Enter in the paramters:
     * KeyName: (Select a EC2 Key Pair you have already created)
     * Owner: (your owner tag)
-    * RedisDBEndpoint: (see below)
-    * RedisDBPassword: (see below)
+    * RedisDBEndpoint: (see below) [Get DB values here](#get-new-db-values-here)
+    * RedisDBPassword: (see below) [Get DB values here](#get-new-db-values-here)
 
 ### Redis Cloud Instuctions:
 1. You will need to create a Redis Cloud Subscription and DB
@@ -78,6 +78,11 @@ Here are the detailed instructions:
 #### **CREATE NEW DB HERE**
 * Create a new DB that you will use, follow the instructions above but pick a 12000 Port
 ![Alt text](image/rediscloud/PictureNEWDB.png?raw=true "Title")
+#### **GET NEW DB VALUES HERE**
+* Get the Redis DB Private Endpoint and the Redis DB Password parameters for your CloudFormation Stack parameters here
+![Alt text](image/rediscloud/PictureNEWDB1.png?raw=true "Title")
+![Alt text](image/rediscloud/PictureNEWDB2.png?raw=true "Title")
+* Save these for later, they will be used in the CF template.
 ![Alt text](image/rediscloud/Picture8.png?raw=true "Title")
 ![Alt text](image/rediscloud/Picture9.png?raw=true "Title")
 ![Alt text](image/rediscloud/Picture10.png?raw=true "Title")
