@@ -43,7 +43,7 @@ After this configure AWS DMS.
     ```
 *****************
 
-### Instructions for Use:
+## Instructions for Use:
 1. Go to CloudFormation in AWS
 2. Click Create Stack
 3. The following buttons should be toggled on 
@@ -58,7 +58,7 @@ After this configure AWS DMS.
     * RedisDBEndpoint: (see below)
     * RedisDBPassword: (see below)
 
-#### Redis Cloud Instuctions:
+### Redis Cloud Instuctions:
 1. You will need to create a Redis Cloud Subscription and DB
 2. The DB should have port 12000
 
@@ -88,7 +88,7 @@ Here are the detailed instructions:
 
 It can take around 15 minutes to provision everything
 
-#### DMS Migration Task:
+### DMS Migration Task:
 * follow migration task instructions
 
 ![Alt text](image/dms-migration/Picture1.png?raw=true "Title")
@@ -100,6 +100,7 @@ It can take around 15 minutes to provision everything
 
 
 
-#### Clean Up:
-* Delete VPC peering connection and route from route table
-* Delete Stack
+### Clean Up:
+1. Delete VPC peering connection and route from route table
+2. Delete Redis Cloud DB and Subscription
+3. Delete Stack
