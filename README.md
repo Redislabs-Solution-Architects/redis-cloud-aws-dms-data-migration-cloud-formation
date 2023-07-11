@@ -87,6 +87,8 @@ Here are the detailed instructions:
 ![Alt text](image/rediscloud/PictureNEWDB2.png?raw=true "Title")
 * Save these for later, they will be used in the CF template.
 ![Alt text](image/rediscloud/Picture8.png?raw=true "Title")
+#### VPC Peering
+* You will need to run the CF template first, then after it is complete you can perform the VPC peering steps.
 ![Alt text](image/rediscloud/Picture9.png?raw=true "Title")
 ![Alt text](image/rediscloud/Picture10.png?raw=true "Title")
 ![Alt text](image/rediscloud/Picture11.png?raw=true "Title")
